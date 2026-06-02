@@ -34,3 +34,6 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# Recursos asociados al HTML
+*_files/
