@@ -1,0 +1,464 @@
+---
+format: 
+  revealjs:
+    theme: ["theme/q-theme.scss"]
+    logo: "imagenes/escudoFC.png"
+    slide-number: c/t
+    footer: "Modelos Lineales semestre 2026-II"
+    transition: fade
+    background-transition: fade
+    center-title-slide: false
+    code-overflow: wrap
+    highlight-style: a11y
+    height: 1080
+    width: 1920
+execute: 
+  eval: true
+  echo: true
+---
+
+<h1>
+<b>Cuando el análisis multivariado y los modelos lineales compiten:</b><br>
+<b>CCA vs Regresión Logística</b>
+</h1>
+
+<h2>
+Usando el dataset `Dune`
+</h2>
+
+<hr>
+
+<h3>Autores</h3>
+
+<ul style="font-size: 1.2em;">
+  <li>Basaldud Rodrigo</li>
+  <li>Artista Lizbeth</li>
+  <li>Noémi Rodríguez</li>
+</ul>
+
+<br>
+
+<h3>Junio 2026</h3>
+
+
+![](imagenes/bosque.jpg){.absolute top=500 left=1400 width="600"}
+
+
+
+# Borrador de presentacion
+
+Este es un primer borrador de la **presentacion** 
+
+ <br>
+
+::: {.fragment}
+> La Regresion logistica es [`Aburrida`]{.fragment}
+
+:::
+
+<br> 
+
+::: {.fragment}
+$$
+logit(p) = X \underline{\beta}
+$$
+
+:::
+
+::: {.fragment}
+> `Y todavia falta hacerla Bayesiana`
+:::
+
+
+# PCA en 5 minutos?
+
+<br>
+<br>
+
+A Pepe le gustaria esto     
+
+<br>
+
+
+[**O no?**]{.fragment}
+
+
+
+# Motivación: `Restauración forestal en México`
+
+Supongamos que la Comisión Nacional Forestal (CONAFOR) desea identificar qué especies arbóreas tienen mayor probabilidad de establecerse en distintas regiones del país para apoyar diferentes programas de reforestación y restauración ecológica.
+
+::: {.fragment}
+Se cuenta con información de cientos de sitios distribuidos en bosques templados del centro de México, donde se registró:
+
+- Altitud.
+- Precipitación anual.
+- Temperatura media.
+- Pendiente del terreno.
+- pH del suelo.
+:::
+
+
+---
+
+Además, para cada sitio se registró la presencia o ausencia de especies como:
+
+- *Pinus montezumae*
+- *Pinus hartwegii*
+- *Quercus rugosa*
+- *Quercus laurina*
+- *Alnus acuminata*
+
+
+
+
+
+# La pregunta de investigación
+
+Antes de plantar árboles, surge una pregunta fundamental:
+
+::: {.fragment}
+**¿Qué especies tienen mayor probabilidad de sobrevivir y establecerse bajo las condiciones ambientales del sitio específico?**
+:::
+
+::: {.fragment}
+La intuición sugiere que se deben usar modelos que relacionen la presencia de cada especie con las variables ambientales, sin embargo existen dos enfoques.
+:::
+
+
+# Enfoque 1: Especie por especie 
+
+<br>
+
+Un técnico forestal podría argumentar:
+
+::: {.fragment}
+> "*Pinus hartwegii* no responde al ambiente de la misma forma que *Quercus rugosa*. Cada especie debe estudiarse individualmente."
+:::
+
+::: {.fragment}
+Entonces se ajusta un modelo para cada especie:
+
+- Un modelo para *Pinus montezumae*.
+- Otro para *Pinus hartwegii*.
+- Otro para *Quercus rugosa*.
+- Etc.
+:::
+
+::: {.fragment}
+Cada modelo selecciona las variables ambientales que mejor explican la presencia de esa especie.
+:::
+
+
+
+# Enfoque 2: Ecosistema como un todo
+
+<br>
+Un ecólogo de comunidades podría responder:
+<br>
+
+::: {.fragment}
+> "Los bosques mexicanos son ecosistemas complejos. Las especies no aparecen de manera aislada, sino que coexisten y hay una relación de entre ellas."
+:::
+<br>
+
+::: {.fragment}
+Por ejemplo:
+
+- Las especies de alta montaña tienden a aparecer juntas.
+- Las especies asociadas a ambientes húmedos suelen coexistir.
+- Los encinos y pinos responden simultáneamente a climas con mucha precipitación.
+:::
+
+::: {.fragment}
+Desde esta perspectiva, se busca un modelo que logre capturar las relaciones entre las especies y su respuesta conjunta al ambiente.
+:::
+
+
+
+
+
+# El dilema
+<br>
+
+He aquí el dilema que motiva esta presentación:
+
+<br>
+
+::: {.fragment}
+>**Si el objetivo es predecir la presencia de especies arbóreas en los bosques mexicanos, ¿es mejor construir un modelo específico para cada especie o aprovechar la información compartida por toda la comunidad vegetal?**
+:::
+
+::: {.fragment}
+Esta discución fue inspirada por el articulo:
+
+>Guisan, A., Weiss, S.B. & Weiss, A.D. GLM versus CCA spatial modeling of plant species distribution. Plant Ecology 143, 107–122 (1999). https://doi.org/10.1023/A:1009841519580
+:::
+
+
+
+
+# Propuesta
+
+::: {.fragment}
+**Enfoque 1:** Modelar cada especie de manera independiente mediante regresión logística.
+:::
+
+::: {.fragment}
+**Enfoque 2:** Modelar simultáneamente toda la comunidad mediante análisis de correspondencias canónicas (CCA).
+:::
+
+::: {.fragment}
+Objetivo:
+
+Evaluar cuál de estas estrategias proporciona una mejor capacidad predictiva para la presencia de especies arbóreas en bosques templados mexicanos.
+:::
+
+# Una modelo conocido: `Regresión Logística`
+<br>
+
+Motivación vinculada con el ejemplo, teoría y ecuación de la regresión logística.
+
+$$
+logit(p) = X \underline{\beta}
+$$
+
+$$
+p = \frac{1}{1 + e^{-X \underline{\beta}}}
+$$
+
+# Grafica reg log
+
+```{R logit}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(ggplot2)
+
+x <- seq(-3, 3, length.out = 200)
+p <- 1/(1 + exp(-x))
+
+ggplot(data.frame(x, p), aes(x, p)) +
+  geom_line(linewidth = 1.5) +
+  labs(
+    x = "Variable ambiental",
+    y = "Probabilidad de presencia"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+# `Análisis de correspondencias ... ¿canónicas?` 
+
+<br>
+
+Motivacion, teoria y ecuacion de la CCA, vinculada con el ejemplo.
+
+* Primero motivar PCA
+* Luego CA
+* CCA = PCA + CA?
+
+
+# Grafica CCA
+
+```{R CCA} 
+#| echo: false
+#| warning: false
+#| message: false
+
+library(ggplot2)
+
+sitios <- data.frame(
+  x = c(-1.5,-1,-0.8,-0.5,0,0.5,1,1.5),
+  y = c(-1,-0.6,0.2,0.8,1.2,0.5,-0.2,-1)
+)
+
+especies <- data.frame(
+  x = c(-1.2,1.3,0.2),
+  y = c(1.2,1.0,-1.1),
+  nombre = c("A","B","C")
+)
+
+ambiente <- data.frame(
+  xend = c(1.5,-1.3),
+  yend = c(1.0,1.3),
+  nombre = c("pH","Humedad")
+)
+
+ggplot() +
+  geom_point(
+    data = sitios,
+    aes(x,y),
+    size = 3
+  ) +
+  geom_text(
+    data = especies,
+    aes(x,y,label=nombre),
+    fontface = "bold",
+    size = 5
+  ) +
+  geom_segment(
+    data = ambiente,
+    aes(
+      x = 0, y = 0,
+      xend = xend, yend = yend
+    ),
+    arrow = arrow(length = unit(0.2,"cm"))
+  ) +
+  geom_text(
+    data = ambiente,
+    aes(xend,yend,label=nombre),
+    vjust = -0.5
+  ) +
+  coord_equal() +
+  labs(
+    x = "CCA1",
+    y = "CCA2"
+  ) +
+  theme_minimal(base_size = 14)
+``` 
+
+
+
+
+# Comparación de enfoques
+<br>
+
+| Método                  | Ventajas                                                                        | Desventajas                                                       |
+| ----------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `Regresión logística` | Fácil interpretación de los efectos de cada variable, estimación de probabilidades. | Analiza una especie a la vez y no describe la comunidad completa. |
+| `CCA`                 | Analiza comunidades completas y relaciona especies con cambios ambientales.  | Interpretación más compleja y no estima probabilidades.       |
+
+
+
+# Ejemplo práctico: `Dune`
+
+<br>
+Usaremos el dataset `Dune` y `Dune.env` de la paquetería `vegan`, que contiene datos de abundancia de especies en 20 sitios, junto con variables ambientales como altitud, humedad y pH del suelo.
+
+<br>
+
+::: {.columns}
+
+::: {.column width="70%"}
+
+::: {.fragment}
+
+```{R}
+#| echo: true
+#| code-line-numbers: "|2"
+
+library(vegan)
+data("dune.env")
+head(dune.env)
+```
+
+:::
+
+<br>
+
+::: {.fragment}
+
+```{R}
+#| echo: true
+#| code-line-numbers: "|2"
+
+library(vegan)
+data("dune")
+head(dune[,1:5])
+```
+
+:::
+
+
+
+:::
+::: {.column width="30%"}
+:::
+:::
+
+
+![](imagenes/vegan.png){.absolute top=500 left=1500 width="300"}
+
+
+
+
+# Prueba codigo animado {auto-animate="true"}
+
+-  De la paquqteria `vegan` 
+-  Ejemplo con el dataset `Dune` que contiene datos de abundancia de especies en 20 sitios.
+
+``` r
+
+library(vegan)
+data("dune.env")
+head(dune.env)
+
+```
+
+
+# Prueba codigo animado 2 {auto-animate="true"}
+
+-  De la paquqteria `vegan` 
+-  Ejemplo con el dataset `Dune` que contiene datos de abundancia de especies en 20 sitios.
+
+``` r
+
+library(vegan)
+data("dune.env")
+head(dune.env)
+
+plot(dune.env$A1, dune.env$Moisture, xlab = "Altitud", ylab = "Humedad", main = "Relación entre Altitud y Humedad")
+
+```
+
+# Prueba codigo con salida
+
+
+```{R}
+
+library(vegan)
+data("dune.env")
+head(dune.env)
+
+plot(dune.env$A1, dune.env$Moisture, xlab = "Altitud", ylab = "Humedad", main = "Relación entre Altitud y Humedad")
+
+```
+
+
+# Animacion enfoque 1 {auto-animate=true auto-animate-easing="ease-in-out"}
+
+<div style="text-align:center; margin-top:200px;">
+
+<div data-id="arbol-principal" style="font-size:300px;">
+🌳
+</div>
+
+</div>
+
+# Animacion enfoque 2 {auto-animate=true auto-animate-easing="ease-in-out"}
+
+
+
+<div style="
+display:grid;
+grid-template-columns: repeat(5,1fr);
+gap:40px;
+margin-top:120px;
+justify-items:center;
+">
+
+<div data-id="arbol-principal" style="font-size:140px;">🌳</div>
+
+<div style="font-size:120px;">🌲</div>
+<div style="font-size:110px;">🌳</div>
+<div style="font-size:130px;">🌴</div>
+<div style="font-size:115px;">🌲</div>
+
+<div style="font-size:105px;">🌳</div>
+<div style="font-size:125px;">🌴</div>
+<div style="font-size:115px;">🌲</div>
+<div style="font-size:130px;">🌳</div>
+<div style="font-size:120px;">🌲</div>
+
+</div>
