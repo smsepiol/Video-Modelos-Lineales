@@ -1,0 +1,36 @@
+# Quarto render
+.quarto/
+
+# Cache de ejecución
+_cache/
+
+# Cache de knitr
+*_cache/
+
+# Archivos temporales de R
+.Rhistory
+.RData
+.Ruserdata
+
+# Archivos temporales de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de VS Code opcionales
+.vscode/
+
+# Archivos temporales de LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
