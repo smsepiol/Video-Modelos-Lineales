@@ -212,7 +212,7 @@ Autores
 Rodrigo Basaldud
 </li>
 <li>
-Lizbeth Artista
+Brenda Ramirez
 </li>
 <li>
 Seani Rodríguez
@@ -341,8 +341,13 @@ background:white;
 <section class="slide level2">
 
 <p><br></p>
-<p>Hay dos detalles importantes:</p>
+<p>Hay algunos detalles importantes:</p>
 <p><br></p>
+<div class="fragment">
+<ul>
+<li>¿Por qué comparar un modelo que sí está hecho para predecir contra un modelo que está hecho para entender perfiles y estructuras?</li>
+</ul>
+</div>
 <div class="fragment">
 <ul>
 <li>Si bien, el título suguiere una competencia entre modelos, en realidad la discución es acerca cuándo conviene escoger cada enfoque.</li>
@@ -411,9 +416,6 @@ background:white;
 <li>¿Existe una combinación favorable de precipitación y pH?</li>
 </ul>
 </div>
-</section>
-<section class="slide level2">
-
 <p><br></p>
 <p>Supongamos que observamos cientos de sitios y para cada uno conocemos su altitud, temperatura, precipitación, pH, así como si la especie estuvo presente o ausente.</p>
 <p><br></p>
@@ -429,7 +431,7 @@ background:white;
 <section class="slide level2">
 
 <p><br></p>
-<p>La regresión logística modela la probabilidad de presencia mediante</p>
+<p>La regresión logística modela la probabilidad de presencia de una especie mediante</p>
 <p><span class="math display">\[
 P(Y=1\mid X)=
 \frac{e^{\eta}}
@@ -451,11 +453,7 @@ P(Y=1\mid X)=
 <div class="fragment">
 <p>y las variables <span class="math inline">\(x_1,\ldots,x_p\)</span> representan las características ambientales del sitio.</p>
 </div>
-</section>
-<section class="slide level2">
-
 </section></section>
-<section>
 <section id="interpretación-ecológica" class="title-slide slide level1">
 <h1>Interpretación ecológica</h1>
 <p><br></p>
@@ -471,19 +469,12 @@ P(Y=1\mid X)=
 <li><span class="math inline">\(\beta_{\text{precipitación}}&gt;0\)</span> podría indicar afinidad por sitios húmedos.</li>
 </ul>
 </div>
-<p><br></p>
-<div class="fragment">
-<p>De esta manera, cada especie obtiene su propia descripción estadística de su nicho ecológico.</p>
-</div>
 </section>
-<section class="slide level2">
 
-</section></section>
 <section>
 <section id="de-variables-ambientales-a-probabilidades" class="title-slide slide level1">
 <h1>De variables ambientales a probabilidades</h1>
-<div class="columns">
-<div class="column" style="width:55%;">
+<p><br></p>
 <div class="fragment">
 <p>La función logística transforma cualquier combinación de variables ambientales en una probabilidad entre 0 y 1.</p>
 </div>
@@ -496,34 +487,17 @@ P(Y=1\mid X)=
 <li>Valores intermedios reflejan incertidumbre.</li>
 </ul>
 </div>
-<p><br></p>
-<div class="fragment">
-<p>Por ejemplo, un sitio con gran altitud podría recibir una probabilidad alta para la presencia de <em>Pinus hartwegii</em>.</p>
-</div>
-</div><div class="column" style="width:45%;">
-<div class="cell">
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="presentacion_files/figure-revealjs/logit-1.png" width="960"></p>
-</figure>
-</div>
-</div>
-</div>
-</div></div>
 </section>
 <section class="slide level2">
 
-</section></section>
+<p>Por ejemplo, un sitio con gran altitud podría recibir una probabilidad alta para la presencia de <em>Pinus hartwegii</em>.</p>
+
+<img data-src="presentacion_files/figure-revealjs/logit-1.png" width="960" class="r-stretch"></section></section>
 <section id="evaluación-predictiva" class="title-slide slide level1">
 <h1>Evaluación predictiva</h1>
 <p><br></p>
 <div class="fragment">
-<p>Una ventaja importante de este enfoque es que la variable respuesta es binaria, es decir <span class="math inline">\(Y \in \{0,1\}\)</span></p>
-</div>
-<p><br></p>
-<div class="fragment">
-<p>Por lo tanto, las probabilidades estimadas pueden transformarse en predicciones de presencia o ausencia mediante un umbral.</p>
+<p>Una ventaja importante de este enfoque es que como la variable respuesta es binaria (es decir <span class="math inline">\(Y \in \{0,1\}\)</span>), entonces las probabilidades estimadas pueden transformarse en predicciones de presencia o ausencia mediante un umbral.</p>
 </div>
 <p><br></p>
 <div class="fragment">
@@ -536,6 +510,11 @@ P(Y=1\mid X)=
 <li>AUC.</li>
 </ul>
 </div>
+</section>
+
+<section id="desventajas" class="title-slide slide level1">
+<h1>Desventajas</h1>
+
 </section>
 
 <section id="enfoque-2-ecosistema-como-un-todo" class="title-slide slide level1">
@@ -609,22 +588,19 @@ P(Y=1\mid X)=
 <section id="ejemplo-práctico-dune" class="title-slide slide level1">
 <h1>Ejemplo práctico: <code>Dune</code></h1>
 <p><br> Usaremos el dataset <code>Dune</code> y <code>Dune.env</code> de la paquetería <code>vegan</code>, que contiene datos de abundancia de especies en 20 sitios, junto con variables ambientales como altitud, humedad y pH del suelo.</p>
-<p><br></p>
 <div class="columns">
 <div class="column" style="width:70%;">
 <div class="fragment">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" data-code-line-numbers="|2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="fu">library</span>(vegan)</span>
 <span id="cb1-2"><a href=""></a><span class="fu">data</span>(<span class="st">"dune.env"</span>)</span>
-<span id="cb1-3"><a href=""></a><span class="fu">head</span>(dune.env)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-3"><a href=""></a><span class="fu">head</span>(dune.env,<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   A1 Moisture Management      Use Manure
 1 2.8        1         SF Haypastu      4
 2 3.5        1         BF Haypastu      2
 3 4.3        2         SF Haypastu      4
-4 4.2        2         SF Haypastu      4
-5 6.3        1         HF Hayfield      2
-6 4.3        1         HF Haypastu      2</code></pre>
+4 4.2        2         SF Haypastu      4</code></pre>
 </div>
 </div>
 </div>
@@ -633,15 +609,13 @@ P(Y=1\mid X)=
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" data-code-line-numbers="|2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a><span class="fu">library</span>(vegan)</span>
 <span id="cb3-2"><a href=""></a><span class="fu">data</span>(<span class="st">"dune"</span>)</span>
-<span id="cb3-3"><a href=""></a><span class="fu">head</span>(dune[,<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-3"><a href=""></a><span class="fu">head</span>(dune[,<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  Achimill Agrostol Airaprae Alopgeni Anthodor
 1        1        0        0        0        0
 2        3        0        0        2        0
 3        0        4        0        7        0
-4        0        8        0        2        0
-5        2        0        0        0        4
-6        2        0        0        0        3</code></pre>
+4        0        8        0        2        0</code></pre>
 </div>
 </div>
 </div>
