@@ -1,0 +1,221 @@
+---
+title: " "
+output: 
+  bookdown::pdf_document2:
+    number_sections: no
+    toc: no
+    highlight: tango
+geometry: margin=1.5cm
+header-includes:
+   - \usepackage{float}
+   - \usepackage[table]{xcolor}
+   - \usepackage{makecell}
+   - \usepackage{booktabs}
+   - \usepackage[spanish]{babel}
+---
+
+```{r setup, include=FALSE}
+
+# Limpieza del entorno de R
+rm(list=ls(all=TRUE))
+
+# Configuración global de los bloques de código (chunk's)
+knitr::opts_chunk$set(
+  echo = FALSE,           
+  fig.align = "center",   
+  fig.dim = c(5,4),  
+  fig.pos = "H",          
+  message = FALSE,        
+  warning = FALSE,        
+  error = FALSE,          
+  cache = FALSE           
+)
+
+# Librerias
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(kableExtra)
+library(patchwork)
+library(vegan)
+library(ggvegan)
+
+```
+
+
+```{r carga_datos, include=FALSE}
+#Cargamos nuestro datos ----
+data(dune)
+data("dune.env")
+
+especies <- dune
+ambientales <- dune.env
+
+str(ambientales)
+
+summary(especies)
+
+# data("varespec")
+# data(varechem)
+
+```
+
+
+
+# Regresión logistica 
+
+```{r reglog, include=FALSE}
+
+especies_bi <- decostand(especies, method = "pa") # pa: scale x to presence/absence scale (0/1) 
+# Achimill_sat <- glm(especies_bi[, "Achimill"] ~ .-Manure,data = ambientales,family = binomial(link = "logit"))
+# Achimill_mod <- step(Achimill_sat)
+# summary(Achimill_mod)
+#vars <- attr(terms(Achimill_mod$formula), "term.labels")
+
+# Ajustar selección stepwise para cada modelo 
+modelos_glm <- lapply(colnames(especies_bi), function(espe) {
+  sat<-glm(especies_bi[, espe] ~ .,data = ambientales,family = binomial)
+  step(sat)}
+  )
+
+names(modelos_glm) <- colnames(especies_bi)
+library(ResourceSelection)
+resultados <- lapply(modelos_glm, function(mod){
+  p_val <- 1 - pchisq(mod$deviance, mod$df.residual)
+  data.frame(
+    formula = paste(deparse(formula(mod)), collapse = ""),
+    dev = mod$deviance,
+    gl = mod$df.residual,
+    p.value = p_val,
+    row.names = NULL)
+})
+
+resultados <- do.call(rbind, resultados)
+rownames(resultados) <- names(modelos_glm)
+
+```
+```{r mods}
+
+resultados %>%
+  kbl(digits = 4,caption = "Modelos seleccionados por especie",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
+```
+
+```{r pred}
+# Faltaría quitar los que no tienen ninguna variable
+set.seed(1234)
+
+# índices entrenamiento y prueba 
+especies_resultados <- c("Achimill", "Agrostol", "Anthodor", "Salirepe", "Poaprat", "Planlanc", "Lolipere") # Solo algunas especies que tuvieron buenos resultados
+train_id <- sample(1:nrow(ambientales),size = 0.6*nrow(ambientales))
+
+resultados_eval <- lapply(especies_resultados, function(esp){
+  y <- especies_bi[, esp]
+  # entrenamiento
+  train_env <- ambientales[train_id, ]
+  test_env  <- ambientales[-train_id, ]
+  train_y <- y[train_id]
+  test_y  <- y[-train_id]
+  
+  #formulas de los modelos 
+  modelo <- modelos_glm[[esp]]
+  variables <- attr(terms(modelo$formula), "term.labels")
+  if (length(variables) == 0) { 
+  formula <- as.formula("y ~ 1") #algunas quedaron sin variables
+  } else {
+  formula <- as.formula(
+    paste("y ~", paste(variables, collapse = " + "))
+  )}
+  train_env$y <- especies_bi[train_id, esp]
+  mod_train <- glm(formula,data = train_env,family = binomial)
+
+  # predicciones
+  prob <- predict(mod_train,newdata = test_env,type = "response")
+  pred <- ifelse(prob >= 0.5, 1, 0)
+  clasif <- table(Real = factor(test_y, levels = c(0,1)),Predicho = factor(pred, levels = c(0,1)))
+  sensibilidad <- ifelse(sum(clasif[2,]) == 0, NA,clasif[2,2] / sum(clasif[2,]))
+
+  especificidad <- ifelse(sum(clasif[1,]) == 0, NA,clasif[1,1] / sum(clasif[1,]))
+
+  proporcion_correcta <- sum(diag(clasif)) / sum(clasif)
+
+  data.frame(especie = esp,formula = paste(attr(terms(mod_train),"term.labels"),collapse = " + "),sensibilidad = sensibilidad, especificidad = especificidad, correcta_total = proporcion_correcta)
+  
+  })
+
+resultados_eval <- do.call(rbind, resultados_eval)
+
+resultados_eval %>%
+  kbl(digits = 4,caption = "Evaluación del poder predictivo para los modelos por especie",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+```
+
+# CCA
+
+```{r cca}
+#cca(especies,ambientales)
+cca_2 <- cca(especies ~ A1 + Moisture + Management + Use, data = ambientales)
+#cca_2<- step(cca_1)
+summary(cca_2)
+
+#plot(cca_2)
+
+
+# Pruebas
+anova(cca_2,by = "axis") # Essuficiente quedarse con los primeros dos ejer
+anova(cca_2,by = "term") # Todas las variables parecen significativas
+
+```
+```{r pred}
+# caracteristicas de un lugar nuevo para identificar que especies podrían estar
+nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 3, Management="NM", Moisture="2", Use="Hayfield"), scal=2)
+# plot(cca_2, scaling = 2)
+# points(nuevo[1],nuevo[2],pch = 19,col = "red",cex = 1)
+# text(nuevo[1],nuevo[2],labels = "Sitio nuevo",pos = 3,col = "red")
+
+
+autoplot(cca_2,layers = c("species","sites","biplot"),scaling = 2)+ 
+  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
+
+#fortify(cca_2)
+```
+```{r entrenamiento}
+
+set.seed(123)
+
+train_id <- sample(1:nrow(especies), size = 0.8*nrow(ambientales))
+
+esp_train <- especies[train_id, ]
+env_train <- ambientales[train_id, ]
+
+esp_test <- especies[-train_id, ]
+env_test <- ambientales[-train_id, ]
+
+cca_train <- cca(esp_train ~ A1 + Moisture + Management + Use,data = env_train)
+
+# Sitios coordenadas
+sit_train <- scores(cca_train,display = "sites",scaling = 2)
+
+# Sitios de prueba proyectados 
+sit_test_obs <- predict(cca_train,newdata = esp_test,type = "wa",scaling = 2) # sitio donde debe estar por las especies
+sit_test_pred <- predict(cca_train,newdata = env_test,type = "lc",scaling = 2) # sitio proyectado en función de las caracteristicas ambientales
+
+sit_train_df <- as.data.frame(sit_train)
+sit_train_df$sitio <- rownames(sit_train)
+sit_test_obs_df <- as.data.frame(sit_test_obs)
+sit_test_pred_df <- as.data.frame(sit_test_pred)
+sit_test_obs_df$id <- 1:nrow(sit_test_obs_df)
+sit_test_pred_df$id <- 1:nrow(sit_test_pred_df)
+
+p <- autoplot(cca_train,layers = c("species","biplot"),scaling = 2)
+
+p + geom_text(data = sit_train_df,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_point(data = sit_test_obs_df,aes(x = CCA1, y = CCA2),colour = "steelblue",) +
+  geom_point(data = sit_test_pred_df,aes(x = CCA1, y = CCA2),colour = "darkred",) +
+  geom_segment(data = cbind(sit_test_obs_df,xend = sit_test_pred_df$CCA1, yend = sit_test_pred_df$CCA2),
+    aes(x = CCA1,y = CCA2,xend = xend,yend = yend),colour = "darkgreen",linetype = 2) +
+  labs(title = "CCA predicciones")
+```
+
+

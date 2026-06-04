@@ -32,7 +32,7 @@ Una comparativa entre la `regresión logística` y `CCA`
 
 <ul style="font-size: 1.2em;">
   <li>Rodrigo Basaldud</li>
-  <li>Lizbeth Artista</li>
+  <li>Brenda Ramirez</li>
   <li>Seani Rodríguez</li>
 </ul>
 
@@ -185,9 +185,13 @@ background:white;
 
 <br>
 
-Hay dos detalles importantes:
+Hay algunos detalles importantes:
 
 <br>
+
+::: {.fragment}
+* ¿Por qué comparar un modelo que sí está hecho para predecir contra un modelo que está hecho para entender perfiles y estructuras? 
+:::
 
 ::: {.fragment}
 * Si bien, el título suguiere una competencia entre modelos, en realidad la discución es acerca cuándo conviene escoger cada enfoque. 
@@ -196,6 +200,7 @@ Hay dos detalles importantes:
 ::: {.fragment}
 * No tiene por qué limitarse a comparar un GLM (regresión logística) contra CCA, sin embargo la regresión logística es un modelo cómodo y el CCA nace naturalmente en el contexto de la ecología.
 :::
+
 
 <br>
 
@@ -259,8 +264,6 @@ Por ejemplo:
 - ¿Existe una combinación favorable de precipitación y pH?
 :::
 
----
-
 <br>
 
 Supongamos que observamos cientos de sitios y para cada uno conocemos su altitud, temperatura, precipitación, pH, así como si la especie estuvo presente o ausente.
@@ -281,7 +284,7 @@ $$
 
 <br>
 
-La regresión logística modela la probabilidad de presencia mediante
+La regresión logística modela la probabilidad de presencia de una especie mediante
 
 $$
 P(Y=1\mid X)=
@@ -310,7 +313,6 @@ $$
 y las variables $x_1,\ldots,x_p$ representan las características ambientales del sitio.
 :::
 
----
 
 # Interpretación ecológica
 
@@ -330,19 +332,10 @@ Por ejemplo:
 - $\beta_{\text{precipitación}}>0$ podría indicar afinidad por sitios húmedos.
 :::
 
-<br>
-
-::: {.fragment}
-De esta manera, cada especie obtiene su propia descripción estadística de su nicho ecológico.
-:::
-
----
 
 # De variables ambientales a probabilidades
 
-::: {.columns}
-
-::: {.column width="55%"}
+<br>
 
 ::: {.fragment}
 La función logística transforma cualquier combinación de variables ambientales en una probabilidad entre 0 y 1.
@@ -358,15 +351,12 @@ Esto permite interpretar directamente el resultado del modelo:
 - Valores intermedios reflejan incertidumbre.
 :::
 
-<br>
+--- 
 
-::: {.fragment}
+
 Por ejemplo, un sitio con gran altitud podría recibir una probabilidad alta para la presencia de *Pinus hartwegii*.
-:::
 
-:::
 
-::: {.column width="45%" }
 
 ```{r logit}
 #| echo: false
@@ -382,29 +372,18 @@ ggplot(data.frame(x, p), aes(x, p)) +
   geom_line(linewidth = 1.5) +
   labs(
     x = "Altitud",
-    y = "Probabilidad"
-  ) +
-  theme_minimal(base_size = 14)
+    y = "Probabilidad") +
+  theme_minimal(base_size = 14) 
 ```
 
-:::
-
-:::
-
----
 
 # Evaluación predictiva
 
 <br>
 
 ::: {.fragment}
-Una ventaja importante de este enfoque es que la variable respuesta es binaria, es decir $Y \in \{0,1\}$
-:::
-
-<br>
-
-::: {.fragment}
-Por lo tanto, las probabilidades estimadas pueden transformarse en predicciones de presencia o ausencia mediante un umbral.
+Una ventaja importante de este enfoque es que como la variable respuesta es binaria (es decir $Y \in \{0,1\}$), entonces
+las probabilidades estimadas pueden transformarse en predicciones de presencia o ausencia mediante un umbral.
 :::
 
 <br>
@@ -418,6 +397,8 @@ Esto permite utilizar métricas de desempeño predictivo como:
 - Curvas ROC.
 - AUC.
 :::
+
+# Desventajas
 
 
 
@@ -533,8 +514,6 @@ ggplot() +
 <br>
 Usaremos el dataset `Dune` y `Dune.env` de la paquetería `vegan`, que contiene datos de abundancia de especies en 20 sitios, junto con variables ambientales como altitud, humedad y pH del suelo.
 
-<br>
-
 ::: {.columns}
 
 ::: {.column width="70%"}
@@ -547,7 +526,7 @@ Usaremos el dataset `Dune` y `Dune.env` de la paquetería `vegan`, que contiene 
 
 library(vegan)
 data("dune.env")
-head(dune.env)
+head(dune.env,4)
 ```
 
 :::
@@ -562,7 +541,7 @@ head(dune.env)
 
 library(vegan)
 data("dune")
-head(dune[,1:5])
+head(dune[,1:5],4)
 ```
 
 :::
