@@ -18,15 +18,18 @@ execute:
 ---
 
 <h1>
-<b>Reforestación forestal: `¿Entender a una especie o a un ecosistema?`</b><br>
+<b>Reforestación arbórea: `¿Entender a una especie o a un ecosistema?`</b><br>
 <b></b>
 </h1>
+
+<hr>
 
 <h2>
 Una comparativa entre la `regresión logística` y `CCA`
 </h2>
 
-<hr>
+<br>
+<br>
 
 <h3>Autores</h3>
 
@@ -41,7 +44,7 @@ Una comparativa entre la `regresión logística` y `CCA`
 <h3>Junio 2026</h3>
 
 
-![](imagenes/bosque.jpg){.absolute top=500 left=1400 width="600"}
+![](imagenes/bosque.jpg){.absolute top=500 left=1000 width="800"}
 
 
 # Motivación
@@ -100,6 +103,7 @@ margin-top:40px;
 
 <br>
 Una pregunta inmediata antes de comenzar a plantar podría ser:
+
 <br>
 <br>
 
@@ -125,11 +129,11 @@ Hay una relación de dependencia entre especies que no se debe ignorar, además 
 ::: {.fragment}
 Por ejemplo:
 
-* Algunas especies tienden a compartir ambientes similares (p.ej. especies de alta montaña).
+- Algunas especies tienden a compartir ambientes similares (p.ej. especies de alta montaña).
 
-* La presencia de una especie puede influir en la presencia de otra (p.ej. especies que compiten por recursos o que tienen relaciones de facilitación).
+- La presencia de una especie puede influir en la presencia de otra (p.ej. especies que compiten por recursos o que tienen relaciones de facilitación).
 
-* Estados como Oaxaca tienen una gran diversidad de ecosistemas, y analizar un ecosistema a la vez puede perder de vista el panoráma completo.
+- Estados como Oaxaca tienen una gran diversidad de ecosistemas, y analizar un ecosistema a la vez puede perder de vista el panoráma completo.
 :::
 
 
@@ -138,7 +142,7 @@ Por ejemplo:
 ---
 
 <br>
-He aquí el dilema que motiva esta presentación:
+Con lo anterior, el dilema que busca explorar esta presentación:
 <br>
 <br>
 
@@ -155,10 +159,8 @@ Afortunadamente, es una discución que ya se ha hecho...
 
 ---
 
-::: {.fragment}
-
 >Esta misma cuestión fue estudiada por Guisan, Weiss y Weiss (1999), quienes compararon un GLM (regresión logística) y CCA para la predicción de distribuciones de plantas.
-:::
+
 
 <br>
 
@@ -194,7 +196,7 @@ Hay algunos detalles importantes:
 :::
 
 ::: {.fragment}
-* Si bien, el título suguiere una competencia entre modelos, en realidad la discución es acerca cuándo conviene escoger cada enfoque. 
+* Si bien, el título suguiere una competencia entre modelos, la verdadera discución es acerca cuándo conviene escoger cada enfoque, y para ilustrarlo se propone un respectivo representante.
 :::
 
 ::: {.fragment}
@@ -256,27 +258,28 @@ La pregunta ahora es:
 
 ---
 
-::: {.fragment}
 Por ejemplo:
 
 - ¿La probabilidad aumenta con la altitud?
 - ¿Disminuye cuando la temperatura es muy alta?
 - ¿Existe una combinación favorable de precipitación y pH?
-:::
 
-<br>
-
-Supongamos que observamos cientos de sitios y para cada uno conocemos su altitud, temperatura, precipitación, pH, así como si la especie estuvo presente o ausente.
 
 <br>
 
 ::: {.fragment}
-La regresión logística intenta aprender una relación entre:
+Supongamos que observamos cientos de sitios y para cada uno conocemos su altitud, temperatura, precipitación, pH, así como si la especie estuvo presente o ausente.
+:::
+
+<br>
+
+::: {.fragment}
+Este modelo busca aprender una relación entre:
 
 $$
 \text{Condiciones ambientales}
 \longrightarrow
-\mathbb{P}(\text{Presencia})
+\mathbb{P}(\text{Presencia de una especie en la región})
 $$
 :::
 
@@ -287,7 +290,7 @@ $$
 La regresión logística modela la probabilidad de presencia de una especie mediante
 
 $$
-P(Y=1\mid X)=
+P(Y=1\mid x_1,\ldots,x_p)=
 \frac{e^{\eta}}
 {1+e^{\eta}}
 $$
@@ -313,8 +316,26 @@ $$
 y las variables $x_1,\ldots,x_p$ representan las características ambientales del sitio.
 :::
 
+---
 
-# Interpretación ecológica
+<br>
+
+La función logística transforma cualquier combinación de variables ambientales en una probabilidad entre 0 y 1.
+
+
+<br>
+
+::: {.fragment}
+Esto permite interpretar directamente el resultado del modelo:
+
+- Valores cercanos a 0 indican baja probabilidad de presencia.
+- Valores cercanos a 1 indican alta probabilidad de presencia.
+- Valores intermedios reflejan incertidumbre.
+:::
+
+
+
+# Efecto de las variables ambientales
 
 <br>
 
@@ -332,29 +353,10 @@ Por ejemplo:
 - $\beta_{\text{precipitación}}>0$ podría indicar afinidad por sitios húmedos.
 :::
 
-
-# De variables ambientales a probabilidades
-
-<br>
-
-::: {.fragment}
-La función logística transforma cualquier combinación de variables ambientales en una probabilidad entre 0 y 1.
-:::
-
-<br>
-
-::: {.fragment}
-Esto permite interpretar directamente el resultado del modelo:
-
-- Valores cercanos a 0 indican baja probabilidad de presencia.
-- Valores cercanos a 1 indican alta probabilidad de presencia.
-- Valores intermedios reflejan incertidumbre.
-:::
-
 --- 
 
 
-Por ejemplo, un sitio con gran altitud podría recibir una probabilidad alta para la presencia de *Pinus hartwegii*.
+Entonces si $\beta_{altitud} > 0$, un sitio con gran altitud podría recibir una probabilidad alta para la presencia de *Pinus hartwegii*.
 
 
 
@@ -372,7 +374,7 @@ ggplot(data.frame(x, p), aes(x, p)) +
   geom_line(linewidth = 1.5) +
   labs(
     x = "Altitud",
-    y = "Probabilidad") +
+    y = "Probabilidad de presencia") +
   theme_minimal(base_size = 14) 
 ```
 
@@ -382,7 +384,7 @@ ggplot(data.frame(x, p), aes(x, p)) +
 <br>
 
 ::: {.fragment}
-Una ventaja importante de este enfoque es que como la variable respuesta es binaria (es decir $Y \in \{0,1\}$), entonces
+Una ventaja importante de este enfoque es que como la variable respuesta es binaria ($Y \in \{0,1\}$), entonces
 las probabilidades estimadas pueden transformarse en predicciones de presencia o ausencia mediante un umbral.
 :::
 
@@ -429,12 +431,441 @@ Esto permite modelar:
 # `Análisis de correspondencias ... ¿canónicas?` 
 
 <br>
+Antes de dar la definición del modelo, las preguntas que lo motivan son:
 
-Motivacion, teoria y ecuacion de la CCA, vinculada con el ejemplo.
 
-* Primero motivar PCA
-* Luego CA
-* CCA = PCA + CA?
+::: {.fragment}
+- ¿Cómo resumir la información ambiental de cientos de sitios?
+:::
+
+::: {.fragment}
+- ¿Cómo resumir patrones de coexistencia entre especies?
+:::
+
+::: {.fragment}
+- ¿Cómo relacionar ambas cosas simultáneamente?
+:::
+
+<br>
+<br>
+
+::: {.fragment}
+Respondamos cada una.
+:::
+
+# Variables ambientales
+
+Si tenemos disponible variables ambientales de diversos sitios.
+
+| Sitio | Temp. | Precip. | Humedad | Altitud |
+|--------|--------|--------|--------|--------|
+| 1 | 22 | 800 | 35 | 1200 |
+| 2 | 18 | 1200 | 60 | 1800 |
+| 3 | 15 | 1500 | 80 | 2400 |
+
+
+::: {.fragment}
+- Generalmente las variables suelen estar correlacionadas (a mayor precipitación, también hay mayor humedad).
+:::
+
+::: {.fragment}
+- Se trabaja con un conjunto de datos de dimensiones altas (muchas variables ambientales).
+:::
+
+
+# Análisis de Componentes Principales (PCA)
+
+## Idea geométrica
+
+Nuestros datos son puntos en $\mathbb{R}^{3}$, sin embargo parece que las variables actuales no explican una buena proporción de la variabilidad.
+
+```{R}
+#| echo: false
+#| results: asis
+
+library(plotly)
+
+set.seed(123)
+
+n <- 100
+
+altitud <- rnorm(n, 2000, 300)
+temperatura <- 30 - altitud/150 + rnorm(n, 0, 1)
+precipitacion <- altitud/2 + rnorm(n, 0, 100)
+
+p <- plot_ly(
+  x = ~altitud,
+  y = ~temperatura,
+  z = ~precipitacion,
+  type = "scatter3d",
+  mode = "markers"
+) %>%
+  layout(
+    width = 700,
+    height = 500
+  )
+
+htmltools::div(
+  style = "text-align:center;",
+  p
+)
+```
+
+---
+
+```{R}
+#| echo: false
+#| warning: false
+#| message: false
+#| out-width: 100%
+#| fig-width: 12
+#| fig-height: 8
+
+library(plotly)
+library(dplyr)
+
+set.seed(123)
+
+n <- 200
+
+# Dos gradientes ambientales subyacentes
+g1 <- rnorm(n)
+g2 <- rnorm(n)
+
+altitud <- rnorm(n, 2000, 300)
+temperatura <- 30 - altitud/150 + rnorm(n, 0, 1)
+precipitacion <- altitud/2 + rnorm(n, 0, 100)
+
+datos <- data.frame(
+  altitud,
+  temperatura,
+  precipitacion
+)
+
+# PCA
+pca <- prcomp(datos, scale. = TRUE)
+
+scores <- as.data.frame(pca$x)
+
+var_exp <- 100 * summary(pca)$importance[2,]
+
+
+# Datos originales
+fig1 <- plot_ly(
+  data = datos,
+  x = ~altitud,
+  y = ~temperatura,
+  z = ~precipitacion,
+  type = "scatter3d",
+  mode = "markers"
+) |>
+  layout(
+    title = "Variables ambientales originales"
+  )
+
+fig1
+```
+
+
+# Componentes principales
+
+```{R}
+#| echo: false
+#| warning: false
+#| message: false
+#| out-width: 100%
+#| fig-width: 12
+#| fig-height: 8
+
+fig2 <- plot_ly(
+  data = scores,
+  x = ~PC1,
+  y = ~PC2,
+  type = "scatter",
+  mode = "markers"
+) |>
+  layout(
+    title = paste0(
+      "PCA: ",
+      round(sum(var_exp[1:2]),1),
+      "% de varianza explicada"
+    ),
+    xaxis = list(title = "PC1"),
+    yaxis = list(title = "PC2")
+  )
+
+fig2
+```
+
+
+
+
+
+---
+
+El PCA construye nuevas variables a partir de combinaciones lineales de las variables disponibles, que expliquen la mayor proporción de varianza de los datos.
+
+$$
+Z_j = a_1X_1+a_2X_2+\cdots+a_pX_p
+$$
+
+La estimación de los coeficientes $a_i$ (pesos) se realiza mediante un problema de maximización iterativo:
+
+
+Sea
+$$
+\mathbf{a}_i=
+\begin{pmatrix}
+a_{i1}\\
+\vdots\\
+a_{ip}
+\end{pmatrix}
+$$
+
+---
+
+Y definamos el i-ésimo componente principal como
+
+$$
+z_i=\mathbf{a}_i^{\top}\mathbf{x}.
+$$
+
+Se busca encontrar $\mathbf{a}_i$ tal que maximice la varianza de $z_i$ ,
+
+$$
+V(z_i)
+=
+V(\mathbf{a}_i^{\top}\mathbf{x})
+=
+\mathbf{a}_i^{\top}\Sigma \mathbf{a}_i,
+$$
+
+---
+
+Sujeto a las restricciones
+
+$$
+\mathbf{a}_i^{\top}\mathbf{a}_i = 1,
+$$
+
+$$
+\operatorname{Cov}(z_j,z_i)
+=
+\operatorname{Cov}(\mathbf{a}_j^{\top}\mathbf{x},
+\mathbf{a}_i^{\top}\mathbf{x})
+=
+\mathbf{a}_j^{\top}\Sigma \mathbf{a}_i
+=
+0,
+\qquad j=1,\ldots,i-1.
+$$
+
+::: {.fragment}
+Es decir, los componentes principales tienen correlación cero y son combinaciones lineales que reflejan la
+máxima variabilidad posible una vez considerando las componentes principales que le preceden.
+:::
+
+::: {.fragment}
+Pero... El PCA está diseñado para variables continuas.
+:::
+
+
+::: {.fragment}
+¿Qué ocurre cuando nuestros datos son abundancias (frecuencias) de especies?
+:::
+
+
+# Matriz de especies
+
+<br>
+
+Supongamos que ahora tenemos información acerca de la abundancia de especies en distintos sitios y nos interesan los perfiles de cada especie.
+
+<br>
+<br>
+
+| Sitio | Pino | Encino | Oyamel | Cedro |
+|--------|--------|--------|--------|--------|
+| 1 | 5 | 1 | 0 | 0 |
+| 2 | 3 | 2 | 0 | 1 |
+| 3 | 0 | 1 | 8 | 0 |
+
+
+
+
+# Análisis de Correspondencias (CA)
+
+El CA está diseñado para tablas de abundancias.
+
+Trabaja con la matriz de frecuencias relativas:
+
+$$
+P=\frac{N}{n}
+$$
+
+donde
+
+- \(N\) es la matriz de abundancias.
+- \(n\) es el total general.
+
+---
+
+## Distancia Ji-cuadrado
+
+El CA utiliza la distancia:
+
+$$
+d(i,j)=
+\sqrt{
+\sum_k
+\frac{
+\left(
+\frac{p_{ik}}{r_i}
+-
+\frac{p_{jk}}{r_j}
+\right)^2
+}
+{c_k}
+}
+$$
+
+donde
+
+- $r_i$ son masas de filas.
+- $c_k$ son masas de columnas.
+
+---
+
+## Interpretación del CA
+
+El CA permite representar en un espacio de baja dimensión de forma simultanea:
+
+- Sitios
+- Especies
+
+::: {.fragment}
+>Sitios cercanos poseen composiciones similares.
+:::
+
+::: {.fragment}
+>Especies cercanas tienden a aparecer juntas.
+:::
+
+---
+
+## CA en R
+
+```{R}
+
+library(vegan)
+data("dune")
+
+ca_fit <- cca(dune)
+
+plot(
+  ca_fit,
+  scaling = 2
+)
+```
+
+---
+
+## Pero aún falta algo
+
+El CA describe patrones de especies.
+
+::: {.fragment}
+No explica por qué aparecen esos patrones.
+:::
+
+::: {.fragment}
+Necesitamos incorporar información ambiental.
+:::
+
+---
+
+## Análisis de Correspondencias Canónicas (CCA)
+
+El CCA combina:
+
+- La ordenación de especies obtenida por CA.
+- Variables ambientales explicativas.
+
+---
+
+## Relación entre los métodos
+
+PCA:
+
+$$
+\text{Ambiente}
+\rightarrow
+\text{Gradientes ambientales}
+$$
+
+CA:
+
+$$
+\text{Especies}
+\rightarrow
+\text{Patrones de composición}
+$$
+
+CCA:
+
+$$
+\text{Ambiente y Especies}
+\rightarrow
+\text{Patrones de especies explicados por ambiente}
+$$
+
+---
+
+## Formulación del CCA
+
+Sea $Y$ la matriz de especies y $X$ la matriz de variables ambientales.
+
+El CCA busca ejes canónicos obtenidos al restringir la ordenación de especies a combinaciones lineales de 
+
+$$
+X\beta.
+$$
+
+---
+
+## Interpretación ecológica
+
+Cada eje canónico representa un gradiente ambiental.
+
+Por ejemplo, el primer eje puede ser asociado al gradiente:
+
+```text
+Climas desérticos ---------------- Climas tropicales
+```
+Y el segundo puede ser asociado a:
+
+```text
+Regiones costeras ---------------- Regiones de montaña
+```
+
+Las especies se ubican según su asociación con cada gradiente.
+
+
+## Mensaje final
+
+| Método | Datos | Objetivo |
+|----------|----------|----------|
+| PCA | Variables ambientales | Encontrar gradientes ambientales |
+| CA | Matriz de especies | Encontrar patrones de composición |
+| CCA | Especies + ambiente | Explicar la composición mediante gradientes ambientales |
+
+::: {.fragment}
+El CCA puede interpretarse como una extensión del CA donde los ejes están restringidos por variables ambientales.
+:::
+
+::: {.fragment}
+Por ello es una de las herramientas más utilizadas para estudiar cómo los gradientes ambientales estructuran las comunidades ecológicas.
+:::
 
 
 # Grafica CCA
@@ -495,7 +926,6 @@ ggplot() +
   ) +
   theme_minimal(base_size = 14)
 ``` 
-
 
 
 
@@ -602,39 +1032,3 @@ plot(dune.env$A1, dune.env$Moisture, xlab = "Altitud", ylab = "Humedad", main = 
 ```
 
 
-# Animacion enfoque 1 {auto-animate=true auto-animate-easing="ease-in-out"}
-
-<div style="text-align:center; margin-top:200px;">
-
-<div data-id="arbol-principal" style="font-size:300px;">
-🌳
-</div>
-
-</div>
-
-# Animacion enfoque 2 {auto-animate=true auto-animate-easing="ease-in-out"}
-
-
-
-<div style="
-display:grid;
-grid-template-columns: repeat(5,1fr);
-gap:40px;
-margin-top:120px;
-justify-items:center;
-">
-
-<div data-id="arbol-principal" style="font-size:140px;">🌳</div>
-
-<div style="font-size:120px;">🌲</div>
-<div style="font-size:110px;">🌳</div>
-<div style="font-size:130px;">🌴</div>
-<div style="font-size:115px;">🌲</div>
-
-<div style="font-size:105px;">🌳</div>
-<div style="font-size:125px;">🌴</div>
-<div style="font-size:115px;">🌲</div>
-<div style="font-size:130px;">🌳</div>
-<div style="font-size:120px;">🌲</div>
-
-</div>
