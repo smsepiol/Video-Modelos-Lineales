@@ -1176,24 +1176,18 @@ head(dune[,1:5],3)
 
 ---
 
-`Dune.env` contiene variables ambientales que describen características del suelo, humedad y manejo del terreno que pueden influir en la composición de las comunidades vegetales. 
+# `Dune.env` 
 
 <br>
 
 
-<br>
-
-
-| Variable     | Escala                | Niveles / Valores                 | Descripción                                                                                                  |
+| Variable     | Escala                | Niveles                  | Descripción                                                                                                  |
 | ------------ | --------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `A1`         | Continua | `-` | Grosor de la capa de materia orgánica del suelo.                                                             |
 | `Moisture`   | Ordinal    | `1`, `2`, `4`, `5`                | Nivel de humedad del sitio, desde ambientes más secos (`1`) hasta más húmedos (`5`).                                     |
 | `Management` | Nominal    | `BF`, `HF`, `NM`, `SF`            | Tipo de manejo del terreno: *Biological Farming*, *Hobby Farming*, *Nature Management* y *Standard Farming*. |
 | `Use`        | Nominal    | `Hayfield`, `Haypastu`, `Pasture` | Uso principal del terreno: producción de heno, heno con pastoreo o pastoreo.                                 |
 | `Manure`     | Ordinal    | `0`, `1`, `2`, `3`, `4`           | Intensidad de fertilización mediante estiércol, de menor (`0`) a mayor aplicación (`4`).                                 |
-
-
-
 
 
 
