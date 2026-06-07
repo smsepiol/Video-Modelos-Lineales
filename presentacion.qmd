@@ -485,6 +485,9 @@ Supongamos que tenemos registros de la temperatura, humedad y precipitación par
 
 Los datos originales:
 
+<br>
+<br>
+
 ```{R}
 #| echo: false
 #| warning: false
@@ -542,6 +545,9 @@ fig1
 ---
 
 Con la información que tengo, ¿Puedo construir nuevas variables que expliquen una mayor proporción de la varianza?
+
+<br>
+<br>
 
 ```{R}
 #| echo: false
@@ -1000,6 +1006,8 @@ $$
 
 # Interpretación
 
+<br>
+
 El CCA es un Análisis de Correspondencias restringido, donde la ordenación de especies y sitios está determinada por variables ambientales observadas.
 
 <br>
@@ -1101,7 +1109,10 @@ plot(
 
 
 
-# Comparación de enfoques
+# Regresando al problema
+
+Una comparación de enfoques:
+
 <br>
 
 | Método                  | Ventajas                                                                        | Desventajas                                                       |
@@ -1110,6 +1121,11 @@ plot(
 | `CCA`                 | Analiza comunidades completas y relaciona especies con cambios ambientales.  | Interpretación más compleja y no estima probabilidades.       |
 
 
+<br>
+
+¿Por qué es interesante esta comparativa en términos de predicción?
+
+Porque el CCA no está pensado para realizar predicción en nuevas observaciones.
 
 # Ejemplo práctico: `Dune`
 
@@ -1160,47 +1176,379 @@ head(dune[,1:5],3)
 
 
 
+# Regresión Logística
 
-# Prueba codigo animado {auto-animate="true"}
-
--  De la paquqteria `vegan` 
--  Ejemplo con el dataset `Dune` que contiene datos de abundancia de especies en 20 sitios.
-
-``` r
-
-library(vegan)
-data("dune.env")
-head(dune.env)
-
-```
-
-
-# Prueba codigo animado 2 {auto-animate="true"}
-
--  De la paquqteria `vegan` 
--  Ejemplo con el dataset `Dune` que contiene datos de abundancia de especies en 20 sitios.
-
-``` r
-
-library(vegan)
-data("dune.env")
-head(dune.env)
-
-plot(dune.env$A1, dune.env$Moisture, xlab = "Altitud", ylab = "Humedad", main = "Relación entre Altitud y Humedad")
-
-```
-
-# Prueba codigo con salida
+Como la regresión logística trabaja con una variable de respuesta binaria, hay que realizar un preprocesamiento a la matriz de especies. 
 
 
 ```{R}
+#| echo: true
+#| code-line-numbers: "|3"
 
+especies <- dune
+ambientales <- dune.env
+especies_bi <- decostand(especies, method = "pa") # pa: scale x to presence/absence scale (0/1) 
+```
+
+<br>
+
+
+Para fines prácticos, se escogieron solo 6 especies del conjunto `Dune`, y a cada una se le ajustó una regresión logística mediante selección de variables stepwise forward. Posteriormente para la evaluación del poder predictivo de cada modelo, se realizó una partición en conjuntos `train` y `test` con proporción 80%-20%. Para construir al conjunto `train` se realizó un muestro aleatorio simple sin remplazo.
+
+
+```{R RL}
+#| include: false
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(kableExtra)
+library(patchwork)
 library(vegan)
-data("dune.env")
-head(dune.env)
 
-plot(dune.env$A1, dune.env$Moisture, xlab = "Altitud", ylab = "Humedad", main = "Relación entre Altitud y Humedad")
+# Ajustar selección stepwise para cada modelo 
+modelos_glm <- lapply(colnames(especies_bi), function(espe) {
+  sat<-glm(especies_bi[, espe] ~ .,data = ambientales,family = binomial)
+  step(sat)}
+  )
+
+names(modelos_glm) <- colnames(especies_bi)
+library(ResourceSelection)
+resultados <- lapply(modelos_glm, function(mod){
+  p_val <- 1 - pchisq(mod$deviance, mod$df.residual)
+  data.frame(
+    formula = paste(deparse(formula(mod)), collapse = ""),
+    dev = mod$deviance,
+    gl = mod$df.residual,
+    p.value = p_val,
+    row.names = NULL)
+})
+
+resultados <- do.call(rbind, resultados)
+rownames(resultados) <- names(modelos_glm)
+```
+
+
+```{R modsRL}
+#| include: false
+
+
+resultados %>%
+  kbl(digits = 4,caption = "Modelos seleccionados por especie",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
 
 ```
 
+
+---
+
+```{R pred}
+#| echo: false
+
+
+# Faltaría quitar los que no tienen ninguna variable
+set.seed(1234)
+
+# índices entrenamiento y prueba 
+especies_resultados <- c("Achimill", "Agrostol", "Anthodor", "Salirepe", "Planlanc", "Lolipere") # Solo algunas especies que tuvieron buenos resultados
+train_id <- sample(1:nrow(ambientales),size = 0.8*nrow(ambientales))
+
+resultados_eval <- lapply(especies_resultados, function(esp){
+  y <- especies_bi[, esp]
+  # entrenamiento
+  train_env <- ambientales[train_id, ]
+  test_env  <- ambientales[-train_id, ]
+  train_y <- y[train_id]
+  test_y  <- y[-train_id]
+  
+  #formulas de los modelos 
+  modelo <- modelos_glm[[esp]]
+  variables <- attr(terms(modelo$formula), "term.labels")
+  if (length(variables) == 0) { 
+  formula <- as.formula("y ~ 1") #algunas quedaron sin variables
+  } else {
+  formula <- as.formula(
+    paste("y ~", paste(variables, collapse = " + "))
+  )}
+  train_env$y <- especies_bi[train_id, esp]
+  mod_train <- glm(formula,data = train_env,family = binomial)
+
+  # predicciones
+  prob <- predict(mod_train,newdata = test_env,type = "response")
+  pred <- ifelse(prob >= 0.5, 1, 0)
+  clasif <- table(Real = factor(test_y, levels = c(0,1)),Predicho = factor(pred, levels = c(0,1)))
+  sensibilidad <- ifelse(sum(clasif[2,]) == 0, NA,clasif[2,2] / sum(clasif[2,]))
+
+  especificidad <- ifelse(sum(clasif[1,]) == 0, NA,clasif[1,1] / sum(clasif[1,]))
+
+  proporcion_correcta <- sum(diag(clasif)) / sum(clasif)
+
+  data.frame(especie = esp,formula = paste(attr(terms(mod_train),"term.labels"),collapse = " + "),sensibilidad = sensibilidad, especificidad = especificidad, correcta_total = proporcion_correcta)
+  
+  })
+
+resultados_eval <- do.call(rbind, resultados_eval)
+
+resultados_eval %>%
+  kbl(digits = 4,caption = "Evaluación del poder predictivo para los modelos por especie",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+```
+
+
+# CA
+
+Consideracion en para usar CCA en prediccion. Similar al paper
+
+---
+
+```{R cca}
+#| echo: false
+
+library(ggvegan)
+
+
+ambientales$Moisture <- as.factor(as.numeric(ambientales$Moisture))
+#cca_1 <- cca(especies ~ A1 + Management + Moisture + Use+ Manure, data = ambientales)
+cca_2 <- cca(especies ~ A1 + Management + Moisture, data = ambientales)
+#summary(cca_2)
+
+#plot(cca_2, scaling = 2)
+
+# Pruebas
+# anova(cca_2)
+# anova(cca_2,by = "axis") # Es suficiente quedarse con los primeros dos ejer
+# anova(cca_2,by = "term") # Todas las variables parecen significativas secuencialmente
+# anova(cca_2, by = "margin") # Todas las variables parecen significativas condicionadas al resto
+
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black")
+
+```
+
+
+---
+
+```{R entrenamiento}
+#| echo: false
+
+set.seed(123)
+
+train_id <- sample(1:nrow(especies), size = 0.8*nrow(ambientales))
+
+esp_train <- especies[train_id, ]
+env_train <- ambientales[train_id, ]
+
+esp_test <- especies[-train_id, ]
+env_test <- ambientales[-train_id, ]
+
+cca_train <- cca(esp_train ~ A1 + Moisture + Management,data = env_train)
+
+# Sitios coordenadas
+sit_train <- scores(cca_train,display = "sites",scaling = 2)
+
+# Sitios de prueba proyectados 
+sit_test_obs <- predict(cca_train,newdata = esp_test,type = "wa",scaling = 2) # sitio donde debe estar por las especies
+sit_test_pred <- predict(cca_train,newdata = env_test,type = "lc",scaling = 2) # sitio proyectado en función de las caracteristicas ambientales
+
+sit_train_df <- as.data.frame(sit_train)
+sit_train_df$sitio <- rownames(sit_train)
+sit_test_obs_df <- as.data.frame(sit_test_obs)
+sit_test_obs_df$sitio <- rownames(sit_test_obs_df)
+sit_test_pred_df <- as.data.frame(sit_test_pred)
+sit_test_pred_df$sitio <- rownames(sit_test_pred_df)
+sit_test_obs_df$id <- 1:nrow(sit_test_obs_df)
+sit_test_pred_df$id <- 1:nrow(sit_test_pred_df)
+
+p <- autoplot(cca_train,layers = c("species","biplot"),scaling = 2)
+
+p + geom_text(data = sit_train_df,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_text(data = sit_test_obs_df,aes(x = CCA1, y = CCA2, label=sitio),colour = "steelblue",) +
+  geom_text(data = sit_test_pred_df,aes(x = CCA1, y = CCA2, label = sitio),colour = "darkred",) +
+  geom_segment(data = cbind(sit_test_obs_df,xend = sit_test_pred_df$CCA1, yend = sit_test_pred_df$CCA2),
+     aes(x = CCA1,y = CCA2,xend = xend,yend = yend),colour = "darkgreen",linetype = 2) +
+  labs(title = "CCA predicciones")
+```
+
+# Ejemplos 
+
+```{R ejmodelos}
+#| include: false
+
+#Achimill~	A1 + Moisture + Management
+mod_Achimill <- glm(especies_bi[, "Achimill"] ~ A1 + Moisture + Management,data = ambientales,family = binomial)
+#Salirepe~	A1 + Moisture + Use
+mod_Salirepe <- glm(especies_bi[, "Salirepe"] ~ A1 + Moisture + Use,data = ambientales,family = binomial)
+#Ranuflam	especies_bi[, espe] ~ A1 + Moisture
+mod_Ranuflam <- glm(especies_bi[, "Ranuflam"] ~ A1 + Moisture,data = ambientales,family = binomial)
+```
+
+
+## Predicción para un nuevo sitio
+
+::: {.columns valign="center"}
+
+::: {.column width="30%"}
+
+```{r tabla-sitio1}
+#| echo: false
+
+sitio_nuevo1 <- data.frame(
+  A1 = 3,
+  Management = "HF",
+  Moisture = "1",
+  Use = "Haypastu"
+)
+
+modelos <- list(
+  Achimill = mod_Achimill,
+  Salirepe = mod_Salirepe,
+  Ranuflam = mod_Ranuflam
+)
+
+sitio1 <- data.frame(
+  probabilidad = sapply(
+    modelos,
+    predict,
+    newdata = sitio_nuevo1,
+    type = "response"
+  )
+)
+
+sitio1 |>
+  tibble::rownames_to_column("Especie") |>
+  kbl(
+    digits = 5,
+    align = "c",
+    caption = "Probabilidad de presencia"
+  ) |>
+  kable_styling(
+    position = "center",
+    full_width = FALSE
+  )
+```
+
+:::
+
+::: {.column width="70%"}
+
+<div style="text-align:center;">
+
+```{r grafica-sitio1}
+#| echo: false
+#| fig-width: 12
+#| fig-height: 10
+#| fig-align: center
+
+
+nuevo <- predict(
+  cca_2,
+  type = "lc",
+  new = data.frame(
+    A1 = 3,
+    Management = "HF",
+    Moisture = "1"
+  ),
+  scal = 2
+)
+
+autoplot(
+  cca_2,
+  layers = c("species", "biplot"),
+  scaling = 2
+) +
+  geom_text(
+    data = sitios,
+    aes(
+      x = CCA1,
+      y = CCA2,
+      label = sitio
+    ),
+    colour = "black"
+  ) +
+  geom_point(
+    aes(
+      x = nuevo[1],
+      y = nuevo[2]
+    ),
+    colour = "red",
+    size = 3
+  )
+```
+
+</div>
+
+:::
+
+:::
+
+---
+
+```{R ejemplo2}
+#| echo: false
+
+# caracteristicas de un lugar nuevo para identificar que especies podrían estar en un sitio con espesor medio de materia organica en suelo; área de conservación natural; y alto indice de humedad
+nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 5, Management="NM", Moisture="4"), scal=2)
+
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
+
+
+# caracteristicas de un lugar nuevo para calcular la probabilidad de presencia de la especie:
+sitio_nuevo2<-data.frame(A1 = 5,Moisture="4", Management = "NM" , Use="Hayfield")
+
+
+modelos <- list(Achimill = mod_Achimill,Salirepe = mod_Salirepe,Ranuflam = mod_Ranuflam)
+sitio1<-data.frame(probabilidad = sapply(modelos,predict,newdata = sitio_nuevo2,type = "response"))
+sitio1 %>%
+  kbl(digits = 5,caption = "Probabilidad de presencia en el sitio: A1 = 5,Moisture=4, Management = NM , Use=Hayfield",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
+
+
+```
+
+
+---
+
+
+```{R Ejemplo3}
+#| echo: false
+
+# caracteristicas de un lugar nuevo para identificar que especies podrían estar en sitios con mucho espesor de materia organica, agricultura sostenible y alto indice de humedad
+nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 9, Management="BF", Moisture="4"), scal=2)
+
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
+
+
+
+# caracteristicas de un lugar nuevo para calcular la probabilidad de presencia de la especie:
+sitio_nuevo3<-data.frame(A1 = 9,Moisture="4", Management = "BF" , Use="Hayfield")
+
+
+modelos <- list(Achimill = mod_Achimill,Salirepe = mod_Salirepe,Ranuflam = mod_Ranuflam)
+sitio1<-data.frame(probabilidad = sapply(modelos,predict,newdata = sitio_nuevo3,type = "response"))
+sitio1 %>%
+  kbl(digits = 5,caption = "Probabilidad de presencia en el sitio: A1 = 5,Moisture=4, Management = NM , Use=Hayfield",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
+
+
+```
+
+# Conclusion
+
+Siguiendo a [], conviene usar un enfoque cuando...
 
