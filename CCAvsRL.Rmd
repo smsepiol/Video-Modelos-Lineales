@@ -107,8 +107,8 @@ resultados %>%
 set.seed(1234)
 
 # índices entrenamiento y prueba 
-especies_resultados <- c("Achimill", "Agrostol", "Anthodor", "Salirepe", "Poaprat", "Planlanc", "Lolipere") # Solo algunas especies que tuvieron buenos resultados
-train_id <- sample(1:nrow(ambientales),size = 0.6*nrow(ambientales))
+especies_resultados <- c("Achimill", "Agrostol", "Anthodor", "Salirepe", "Planlanc", "Lolipere") # Solo algunas especies que tuvieron buenos resultados
+train_id <- sample(1:nrow(ambientales),size = 0.8*nrow(ambientales))
 
 resultados_eval <- lapply(especies_resultados, function(esp){
   y <- especies_bi[, esp]
@@ -153,34 +153,28 @@ resultados_eval %>%
 
 # CCA
 
-```{r cca}
-#cca(especies,ambientales)
-cca_2 <- cca(especies ~ A1 + Moisture + Management + Use, data = ambientales)
-#cca_2<- step(cca_1)
-summary(cca_2)
+```{r cca, fig.dim=c(6,4)}
+ambientales$Moisture <- as.factor(as.numeric(ambientales$Moisture))
+#cca_1 <- cca(especies ~ A1 + Management + Moisture + Use+ Manure, data = ambientales)
+cca_2 <- cca(especies ~ A1 + Management + Moisture, data = ambientales)
+#summary(cca_2)
 
-#plot(cca_2)
-
+#plot(cca_2, scaling = 2)
 
 # Pruebas
-anova(cca_2,by = "axis") # Essuficiente quedarse con los primeros dos ejer
-anova(cca_2,by = "term") # Todas las variables parecen significativas
+# anova(cca_2)
+# anova(cca_2,by = "axis") # Es suficiente quedarse con los primeros dos ejer
+# anova(cca_2,by = "term") # Todas las variables parecen significativas secuencialmente
+# anova(cca_2, by = "margin") # Todas las variables parecen significativas condicionadas al resto
 
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black")
 ```
-```{r pred}
-# caracteristicas de un lugar nuevo para identificar que especies podrían estar
-nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 3, Management="NM", Moisture="2", Use="Hayfield"), scal=2)
-# plot(cca_2, scaling = 2)
-# points(nuevo[1],nuevo[2],pch = 19,col = "red",cex = 1)
-# text(nuevo[1],nuevo[2],labels = "Sitio nuevo",pos = 3,col = "red")
 
-
-autoplot(cca_2,layers = c("species","sites","biplot"),scaling = 2)+ 
-  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
-
-#fortify(cca_2)
-```
-```{r entrenamiento}
+```{r entrenamiento, fig.dim=c(6,4)}
 
 set.seed(123)
 
@@ -192,7 +186,7 @@ env_train <- ambientales[train_id, ]
 esp_test <- especies[-train_id, ]
 env_test <- ambientales[-train_id, ]
 
-cca_train <- cca(esp_train ~ A1 + Moisture + Management + Use,data = env_train)
+cca_train <- cca(esp_train ~ A1 + Moisture + Management,data = env_train)
 
 # Sitios coordenadas
 sit_train <- scores(cca_train,display = "sites",scaling = 2)
@@ -204,18 +198,115 @@ sit_test_pred <- predict(cca_train,newdata = env_test,type = "lc",scaling = 2) #
 sit_train_df <- as.data.frame(sit_train)
 sit_train_df$sitio <- rownames(sit_train)
 sit_test_obs_df <- as.data.frame(sit_test_obs)
+sit_test_obs_df$sitio <- rownames(sit_test_obs_df)
 sit_test_pred_df <- as.data.frame(sit_test_pred)
+sit_test_pred_df$sitio <- rownames(sit_test_pred_df)
 sit_test_obs_df$id <- 1:nrow(sit_test_obs_df)
 sit_test_pred_df$id <- 1:nrow(sit_test_pred_df)
 
 p <- autoplot(cca_train,layers = c("species","biplot"),scaling = 2)
 
 p + geom_text(data = sit_train_df,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
-  geom_point(data = sit_test_obs_df,aes(x = CCA1, y = CCA2),colour = "steelblue",) +
-  geom_point(data = sit_test_pred_df,aes(x = CCA1, y = CCA2),colour = "darkred",) +
+  geom_text(data = sit_test_obs_df,aes(x = CCA1, y = CCA2, label=sitio),colour = "steelblue",) +
+  geom_text(data = sit_test_pred_df,aes(x = CCA1, y = CCA2, label = sitio),colour = "darkred",) +
   geom_segment(data = cbind(sit_test_obs_df,xend = sit_test_pred_df$CCA1, yend = sit_test_pred_df$CCA2),
-    aes(x = CCA1,y = CCA2,xend = xend,yend = yend),colour = "darkgreen",linetype = 2) +
+     aes(x = CCA1,y = CCA2,xend = xend,yend = yend),colour = "darkgreen",linetype = 2) +
   labs(title = "CCA predicciones")
 ```
 
+# Ejemplos 
+
+```{r ejmodelos}
+#Achimill~	A1 + Moisture + Management
+mod_Achimill <- glm(especies_bi[, "Achimill"] ~ A1 + Moisture + Management,data = ambientales,family = binomial)
+#Salirepe~	A1 + Moisture + Use
+mod_Salirepe <- glm(especies_bi[, "Salirepe"] ~ A1 + Moisture + Use,data = ambientales,family = binomial)
+#Ranuflam	especies_bi[, espe] ~ A1 + Moisture
+mod_Ranuflam <- glm(especies_bi[, "Ranuflam"] ~ A1 + Moisture,data = ambientales,family = binomial)
+```
+
+```{r ejemplo1, fig.dim=c(6,4)}
+
+# Nos interesa analizar que especies podrían encontrarse en un lugar con menor grosor de materia organica (areas con más pobreza de nutrientes); manejo de Hobby Farming, es decir, cultivo en poco desarrollo; y baja humedad
+# caracteristicas de un lugar nuevo para identificar que especies podrían estar
+nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 3, Management="HF", Moisture="1"), scal=2)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
+
+
+# caracteristicas de un lugar nuevo para calcular la probabilidad de presencia de la especie :
+sitio_nuevo1<-data.frame(A1 = 3,Management="HF", Moisture="1", Use="Haypastu")
+# #Achimill
+# pred_sitio1_Achimill<-predict(mod_Achimill, type="response", sitio_nuevo1)
+# pred_sitio1_Achimill
+# #Salirepe
+# pred_sitio1_Salirepe<-predict(mod_Salirepe, type="response", sitio_nuevo1)
+# pred_sitio1_Salirepe
+# #Ranuflam
+# pred_sitio1_Ranuflam<-predict(mod_Ranuflam, type="response", sitio_nuevo1)
+# pred_sitio1_Ranuflam
+
+modelos <- list(Achimill = mod_Achimill,Salirepe = mod_Salirepe,Ranuflam = mod_Ranuflam)
+sitio1<-data.frame(probabilidad = sapply(modelos,predict,newdata = sitio_nuevo1,type = "response"))
+sitio1 %>%
+  kbl(digits = 5,caption = "Probabilidad de presencia en el sitio: A1 = 3,Management=HF, Moisture=1, Use=Haypastu",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
+```
+
+
+
+```{r ejemplo2, fig.dim=c(6,4)}
+# caracteristicas de un lugar nuevo para identificar que especies podrían estar en un sitio con espesor medio de materia organica en suelo; área de conservación natural; y alto indice de humedad
+nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 5, Management="NM", Moisture="4"), scal=2)
+
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
+
+
+# caracteristicas de un lugar nuevo para calcular la probabilidad de presencia de la especie:
+sitio_nuevo2<-data.frame(A1 = 5,Moisture="4", Management = "NM" , Use="Hayfield")
+
+
+modelos <- list(Achimill = mod_Achimill,Salirepe = mod_Salirepe,Ranuflam = mod_Ranuflam)
+sitio1<-data.frame(probabilidad = sapply(modelos,predict,newdata = sitio_nuevo2,type = "response"))
+sitio1 %>%
+  kbl(digits = 5,caption = "Probabilidad de presencia en el sitio: A1 = 5,Moisture=4, Management = NM , Use=Hayfield",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
+
+
+```
+```{r Ejemplo3, fig.dim=c(6,4)}
+# caracteristicas de un lugar nuevo para identificar que especies podrían estar en sitios con mucho espesor de materia organica, agricultura sostenible y alto indice de humedad
+nuevo<-predict(cca_2, type="lc", new=data.frame(A1 = 9, Management="BF", Moisture="4"), scal=2)
+
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black") +
+  geom_point(aes(x = nuevo[1], y = nuevo[2]),colour = "red",size = 2)
+
+
+
+# caracteristicas de un lugar nuevo para calcular la probabilidad de presencia de la especie:
+sitio_nuevo3<-data.frame(A1 = 9,Moisture="4", Management = "BF" , Use="Hayfield")
+
+
+modelos <- list(Achimill = mod_Achimill,Salirepe = mod_Salirepe,Ranuflam = mod_Ranuflam)
+sitio1<-data.frame(probabilidad = sapply(modelos,predict,newdata = sitio_nuevo3,type = "response"))
+sitio1 %>%
+  kbl(digits = 5,caption = "Probabilidad de presencia en el sitio: A1 = 5,Moisture=4, Management = NM , Use=Hayfield",align = "c")  %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"), position = "center")
+
+
+
+```
 
