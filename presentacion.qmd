@@ -1094,20 +1094,6 @@ plot(
 ``` 
 
 
-## Resumiendo los métodos
-
-<br>
-<br>
-
-| Método | Datos | Objetivo |
-|----------|----------|----------|
-| PCA | Variables ambientales | Encontrar gradientes ambientales |
-| CA | Matriz de especies | Encontrar patrones de composición |
-| CCA | Especies + ambiente | Explicar la composición mediante gradientes ambientales |
-
-
-
-
 # Regresando al problema
 
 Una comparación de enfoques:
@@ -1122,9 +1108,6 @@ Una comparación de enfoques:
 
 <br>
 
-¿Por qué es interesante esta comparativa en términos de predicción?
-
-Porque el CCA no está pensado para realizar predicción en nuevas observaciones.
 
 # Ejemplo práctico: `Dune`
 
@@ -1177,9 +1160,7 @@ head(dune[,1:5],3)
 
 
 
-# `Dune.env` 
-
-<br>
+---
 
 
 | Variable     | Escala                | Niveles                  | Descripción                                                                                                  |
@@ -1191,11 +1172,47 @@ head(dune[,1:5],3)
 | `Manure`     | Ordinal    | `0`, `1`, `2`, `3`, `4`           | Intensidad de fertilización mediante estiércol, de menor (`0`) a mayor aplicación (`4`).                                 |
 
 
+---
 
-# Regresión Logística
+Primero, usamos CCA para analizar a la comunidad completa.
+
+```{R cca}
+#| echo: false
+
+library(ggvegan)
+
+especies <- dune
+ambientales <- dune.env
+
+ambientales$Moisture <- as.factor(as.numeric(ambientales$Moisture))
+#cca_1 <- cca(especies ~ A1 + Management + Moisture + Use+ Manure, data = ambientales)
+cca_2 <- cca(especies ~ A1 + Management + Moisture, data = ambientales)
+#summary(cca_2)
+
+#plot(cca_2, scaling = 2)
+
+# Pruebas
+# anova(cca_2)
+# anova(cca_2,by = "axis") # Es suficiente quedarse con los primeros dos ejer
+# anova(cca_2,by = "term") # Todas las variables parecen significativas secuencialmente
+# anova(cca_2, by = "margin") # Todas las variables parecen significativas condicionadas al resto
+
+sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
+sitios$sitio <- rownames(sitios)
+
+autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
+  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black")
+
+```
+
+
+# `Regresión Logística`
+
+<br>
 
 Como la regresión logística trabaja con una variable de respuesta binaria, hay que realizar un preprocesamiento a la matriz de especies. 
 
+<br>
 
 ```{R}
 #| echo: true
@@ -1312,38 +1329,10 @@ resultados_eval %>%
 ```
 
 
-# CA
+# `CCA`
 
 Consideracion en para usar CCA en prediccion. Similar al paper
 
----
-
-```{R cca}
-#| echo: false
-
-library(ggvegan)
-
-
-ambientales$Moisture <- as.factor(as.numeric(ambientales$Moisture))
-#cca_1 <- cca(especies ~ A1 + Management + Moisture + Use+ Manure, data = ambientales)
-cca_2 <- cca(especies ~ A1 + Management + Moisture, data = ambientales)
-#summary(cca_2)
-
-#plot(cca_2, scaling = 2)
-
-# Pruebas
-# anova(cca_2)
-# anova(cca_2,by = "axis") # Es suficiente quedarse con los primeros dos ejer
-# anova(cca_2,by = "term") # Todas las variables parecen significativas secuencialmente
-# anova(cca_2, by = "margin") # Todas las variables parecen significativas condicionadas al resto
-
-sitios <- scores(cca_2,display = "sites",scaling = 2)%>% as.data.frame()
-sitios$sitio <- rownames(sitios)
-
-autoplot(cca_2,layers = c("species","biplot"),scaling = 2)+ 
-  geom_text(data = sitios,aes(x = CCA1, y = CCA2, label = sitio),colour = "black")
-
-```
 
 
 ---
@@ -1389,7 +1378,6 @@ p + geom_text(data = sit_train_df,aes(x = CCA1, y = CCA2, label = sitio),colour 
   labs(title = "CCA predicciones")
 ```
 
-# Ejemplos 
 
 ```{R ejmodelos}
 #| include: false
@@ -1403,11 +1391,19 @@ mod_Ranuflam <- glm(especies_bi[, "Ranuflam"] ~ A1 + Moisture,data = ambientales
 ```
 
 
-## Predicción para un nuevo sitio
+---
+
+Para un sitio con condiciones ambientales A1 = 3, Management=HF , Moisture=1, Use=Haypastu.
+
+<br>
 
 ::: {.columns valign="center"}
 
-::: {.column width="30%"}
+::: {.column width="35%"}
+
+<div style="text-align:center;">
+
+Estimación de presencia via RL
 
 ```{r tabla-sitio1}
 #| echo: false
@@ -1439,7 +1435,7 @@ sitio1 |>
   kbl(
     digits = 5,
     align = "c",
-    caption = "Probabilidad de presencia"
+    caption = ""
   ) |>
   kable_styling(
     position = "center",
@@ -1447,11 +1443,18 @@ sitio1 |>
   )
 ```
 
+</div>
+
+
+
 :::
 
-::: {.column width="70%"}
+::: {.column width="65%"}
+
 
 <div style="text-align:center;">
+
+Estimación de presencia via CCA
 
 ```{r grafica-sitio1}
 #| echo: false
@@ -1491,8 +1494,8 @@ autoplot(
       y = nuevo[2]
     ),
     colour = "red",
-    size = 3
-  )
+    size = 3) 
+
 ```
 
 </div>
