@@ -652,8 +652,7 @@ $$
 
 <br>
 
-Es decir, los componentes principales tienen correlación cero y son combinaciones lineales que reflejan la
-máxima variabilidad posible una vez considerando las componentes principales que le preceden.
+Es decir, se busca que los componentes principales no están correlacionados entre sí y además son combinaciones lineales que reflejan la máxima variabilidad posible una vez considerando los componentes principales que le preceden.
 
 <br>
 <br>
@@ -846,9 +845,9 @@ No explica por qué aparecen esos patrones.
 Necesitamos incorporar información ambiental.
 :::
 
----
 
-## Análisis de Correspondencias Canónicas (CCA)
+
+# Análisis de Correspondencias Canónicas (CCA)
 
 
 <br>
@@ -1013,7 +1012,7 @@ El CCA es un Análisis de Correspondencias restringido, donde la ordenación de 
 <br>
 <br>
 
-Los autovalores miden la cantidad de variación en la composición de especies explicada por dichos gradientes ambientales, mientras que los puntajes de sitios y especies permiten construir el biplot canónico.
+Los valores propios miden la cantidad de variación en la composición de especies explicada por dichos gradientes ambientales, mientras que los puntajes de sitios y especies permiten construir el biplot canónico.
 
 
 ---
@@ -1055,8 +1054,7 @@ Luego de realizar mediciones en 10 sitios sobre la abundancia de 4 especies adem
 
 ```{R CCA} 
 #| echo: false
-#| warning: false
-#| message: false
+
 
 library(vegan)
 
@@ -1092,6 +1090,7 @@ plot(
   scaling = 2,
   main = "CCA: Especies y variables ambientales"
 )
+
 ``` 
 
 
@@ -1118,7 +1117,7 @@ Una comparación de enfoques:
 | Método                  | Ventajas                                                                        | Desventajas                                                       |
 | ----------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `Regresión logística` | Fácil interpretación de los efectos de cada variable, estimación de probabilidades. | Analiza una especie a la vez y no describe la comunidad completa. |
-| `CCA`                 | Analiza comunidades completas y relaciona especies con cambios ambientales.  | Interpretación más compleja y no estima probabilidades.       |
+| `CCA`                 | Analiza comunidades completas y relaciona especies con cambios ambientales.  | La interpretación de los perfiles es compleja y no estima probabilidades.       |
 
 
 <br>
@@ -1130,7 +1129,7 @@ Porque el CCA no está pensado para realizar predicción en nuevas observaciones
 # Ejemplo práctico: `Dune`
 
 <br>
-Usaremos el dataset `Dune` y `Dune.env` de la paquetería `vegan`, que contiene datos de abundancia de especies en 20 sitios, junto con variables ambientales como altitud, humedad y pH del suelo.
+Usaremos el dataset `Dune.env` y `Dune` de la paquetería `vegan`, que contiene datos de abundancia de especies en 20 sitios, junto con variables ambientales como altitud, humedad y pH del suelo.
 
 ::: {.columns}
 
@@ -1173,6 +1172,28 @@ head(dune[,1:5],3)
 
 
 ![](imagenes/vegan.png){.absolute top=500 left=1500 width="300"}
+
+
+---
+
+`Dune.env` contiene variables ambientales que describen características del suelo, humedad y manejo del terreno que pueden influir en la composición de las comunidades vegetales. 
+
+<br>
+
+
+<br>
+
+
+| Variable     | Escala                | Niveles / Valores                 | Descripción                                                                                                  |
+| ------------ | --------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `A1`         | Continua | `-` | Grosor de la capa de materia orgánica del suelo.                                                             |
+| `Moisture`   | Ordinal    | `1`, `2`, `4`, `5`                | Nivel de humedad del sitio, desde ambientes más secos (`1`) hasta más húmedos (`5`).                                     |
+| `Management` | Nominal    | `BF`, `HF`, `NM`, `SF`            | Tipo de manejo del terreno: *Biological Farming*, *Hobby Farming*, *Nature Management* y *Standard Farming*. |
+| `Use`        | Nominal    | `Hayfield`, `Haypastu`, `Pasture` | Uso principal del terreno: producción de heno, heno con pastoreo o pastoreo.                                 |
+| `Manure`     | Ordinal    | `0`, `1`, `2`, `3`, `4`           | Intensidad de fertilización mediante estiércol, de menor (`0`) a mayor aplicación (`4`).                                 |
+
+
+
 
 
 
